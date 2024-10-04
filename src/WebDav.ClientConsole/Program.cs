@@ -18,39 +18,37 @@ namespace WebDav.ClientConsole
 
         private static async Task TestWebDav()
         {
-            using (var webDavClient = new WebDavClient(new WebDavClientParams { BaseAddress = new Uri("http://mywebdav:88/") }))
+            using var webDavClient = new WebDavClient(new WebDavClientParams { BaseAddress = new Uri("http://mywebdav:88/") });
+            await webDavClient.Copy("1.txt", "_2.txt");
+
+            await webDavClient.Move("http://mywebdav:88/_2.txt", "2.txt");
+
+            await webDavClient.Mkcol("http://mywebdav:88/mydir");
+
+            await webDavClient.PutFile("http://mywebdav:88/mydir/test.txt", File.OpenRead("test.txt"), "text/plain");
+
+            await webDavClient.Move("mydir/test.txt", "http://mywebdav:88/mydir/test_ren.txt");
+
+            await webDavClient.Copy("http://mywebdav:88/mydir/", "http://mywebdav:88/mydir1/");
+
+            await webDavClient.Copy("http://mywebdav:88/mydir/", "http://mywebdav:88/mydir2/", new CopyParameters { ApplyTo = ApplyTo.Copy.ResourceOnly });
+
+            using (var response = await webDavClient.GetRawFile("http://mywebdav:88/mydir/test_ren.txt"))
+            using (var reader = new StreamReader(response.Stream))
             {
-                await webDavClient.Copy("1.txt", "_2.txt");
-
-                await webDavClient.Move("http://mywebdav:88/_2.txt", "2.txt");
-
-                await webDavClient.Mkcol("http://mywebdav:88/mydir");
-
-                await webDavClient.PutFile("http://mywebdav:88/mydir/test.txt", File.OpenRead("test.txt"), "text/plain");
-
-                await webDavClient.Move("mydir/test.txt", "http://mywebdav:88/mydir/test_ren.txt");
-
-                await webDavClient.Copy("http://mywebdav:88/mydir/", "http://mywebdav:88/mydir1/");
-
-                await webDavClient.Copy("http://mywebdav:88/mydir/", "http://mywebdav:88/mydir2/", new CopyParameters { ApplyTo = ApplyTo.Copy.ResourceOnly });
-
-                using (var response = await webDavClient.GetRawFile("http://mywebdav:88/mydir/test_ren.txt"))
-                using (var reader = new StreamReader(response.Stream))
-                {
-                    var fileOutput = await reader.ReadToEndAsync();
-                    Console.WriteLine(fileOutput);
-                }
-
-                await TestPropfind(webDavClient);
-
-                await TestSearch(webDavClient);
-
-                await TestLock(webDavClient);
-
-                await TestPropatch(webDavClient);
-
-                await webDavClient.Delete("http://mywebdav:88/mydir");
+                var fileOutput = await reader.ReadToEndAsync();
+                Console.WriteLine(fileOutput);
             }
+
+            await TestPropfind(webDavClient);
+
+            await TestSearch(webDavClient);
+
+            await TestLock(webDavClient);
+
+            await TestPropatch(webDavClient);
+
+            await webDavClient.Delete("http://mywebdav:88/mydir");
         }
 
         public static async Task TestSearch(WebDavClient webDavClient)
@@ -61,11 +59,11 @@ namespace WebDav.ClientConsole
                     Scope = "/mydir/",
                     SearchProperty = "{DAV:}displayname",
                     SearchKeyword = "test%",
-                    SelectProperties = new XName[]
-                    {
+                    SelectProperties =
+                    [
                         "{DAV:}displayname",
-                        "{DAV:}getcontenttype"
-                    },
+                    "{DAV:}getcontenttype"
+                    ],
                 }
             );
             Console.WriteLine(response.ToString());
@@ -75,8 +73,8 @@ namespace WebDav.ClientConsole
         {
             var propfindParams = new PropfindParameters
             {
-                CustomProperties = new XName[] {"testprop"},
-                Namespaces = new[] {new NamespaceAttr("http://example.com")}
+                CustomProperties = ["testprop"],
+                Namespaces = [new NamespaceAttr("http://example.com")]
             };
             var response = await webDavClient.Propfind("http://mywebdav:88", propfindParams);
             Console.WriteLine(response.ToString());
@@ -150,8 +148,8 @@ namespace WebDav.ClientConsole
             var @params = new ProppatchParameters
             {
                 PropertiesToSet = new Dictionary<XName, string> { { "{DAV:}getcontenttype", "text/plain" }, { XName.Get("myprop", xns), "myval" } },
-                PropertiesToRemove = new List<XName> { "{DAV:}ETag" },
-                Namespaces = new List<NamespaceAttr> { new NamespaceAttr("x", xns) }
+                PropertiesToRemove = ["{DAV:}ETag"],
+                Namespaces = [new NamespaceAttr("x", xns)]
             };
             var response = await webDavClient.Proppatch("http://mywebdav:88/1.txt", @params);
             Console.WriteLine(response.ToString());

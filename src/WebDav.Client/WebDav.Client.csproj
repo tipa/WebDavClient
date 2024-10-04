@@ -41,7 +41,7 @@
     <AssemblyOriginatorKeyFile>..\..\webdavclient.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
-    <NoWarn>1701;1702;1705;1591</NoWarn>
+    <NoWarn>1701;1702;1705;1591;IDE0130</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

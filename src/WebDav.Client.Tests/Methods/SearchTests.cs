@@ -1,7 +1,7 @@
 ﻿using NSubstitute;
 using System;
 using System.Threading;
-using System.Xml.Linq;
+using System.Threading.Tasks;
 using WebDav.Client.Tests.TestDoubles;
 using Xunit;
 
@@ -10,7 +10,7 @@ namespace WebDav.Client.Tests.Methods
     public class SearchTests
     {
         [Fact]
-        public async void When_RequestIsSuccessfull_Should_ReturnStatusCode200()
+        public async Task When_RequestIsSuccessfull_Should_ReturnStatusCode200()
         {
             var dispatcher = Dispatcher.Mock();
             var client = new WebDavClient().SetWebDavDispatcher(dispatcher);
@@ -25,7 +25,7 @@ namespace WebDav.Client.Tests.Methods
         }
 
         [Fact]
-        public async void When_PassingNoSelectProperties_Should_IncludeAllProp()
+        public async Task When_PassingNoSelectProperties_Should_IncludeAllProp()
         {
             var dispatcher = Dispatcher.Mock();
             var client = new WebDavClient().SetWebDavDispatcher(dispatcher);
@@ -68,7 +68,7 @@ namespace WebDav.Client.Tests.Methods
         }
 
         [Fact]
-        public async void When_PassingSelectProperties_Should_IncludeThem()
+        public async Task When_PassingSelectProperties_Should_IncludeThem()
         {
             var dispatcher = Dispatcher.Mock();
             var client = new WebDavClient().SetWebDavDispatcher(dispatcher);
@@ -77,11 +77,11 @@ namespace WebDav.Client.Tests.Methods
                 Scope = "/root/",
                 SearchProperty = "{DAV:}displayname",
                 SearchKeyword = "test%",
-                SelectProperties = new XName[]
-                {
+                SelectProperties =
+                [
                     "{DAV:}displayname",
                     "{DAV:}getcontenttype"
-                }
+                ]
             });
 
             const string expectedContent =
@@ -119,7 +119,7 @@ namespace WebDav.Client.Tests.Methods
         }
 
         [Fact]
-        public async void Should_SupportPropertiesWithDifferentNamespaces()
+        public async Task Should_SupportPropertiesWithDifferentNamespaces()
         {
             var dispatcher = Dispatcher.Mock();
             var client = new WebDavClient().SetWebDavDispatcher(dispatcher);
@@ -128,19 +128,19 @@ namespace WebDav.Client.Tests.Methods
                 Scope = "/root/",
                 SearchProperty = "{NS1}prop1",
                 SearchKeyword = "test%",
-                SelectProperties = new XName[]
-                {
+                SelectProperties =
+                [
                     "{NS1}prop1",
                     "{http://ns2.example.com}prop2",
                     "{DEFAULT}prop3",
                     "{DAV:}prop4"
-                },
-                Namespaces = new []
-                {
+                ],
+                Namespaces =
+                [
                     new NamespaceAttr("NS1", "NS1"),
                     new NamespaceAttr("NS2", "http://ns2.example.com"),
                     new NamespaceAttr("DEFAULT")
-                }
+                ]
             });
 
             Assert.Equal(200, response.StatusCode);

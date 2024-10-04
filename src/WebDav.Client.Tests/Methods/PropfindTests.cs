@@ -1,7 +1,8 @@
-﻿using System;
+﻿using NSubstitute;
+using System;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Xml.Linq;
-using NSubstitute;
 using WebDav.Client.Tests.TestDoubles;
 using Xunit;
 
@@ -10,7 +11,7 @@ namespace WebDav.Client.Tests.Methods
     public class PropfindTests
     {
         [Fact]
-        public async void When_RequestIsSuccessfull_Should_ReturnStatusCode200()
+        public async Task When_RequestIsSuccessfull_Should_ReturnStatusCode200()
         {
             var client = new WebDavClient().SetWebDavDispatcher(Dispatcher.Mock());
             var response1 = await client.Propfind("http://example.com");
@@ -25,7 +26,7 @@ namespace WebDav.Client.Tests.Methods
         }
 
         [Fact]
-        public async void When_RequestIsSuccessfull_Should_ParseResponse()
+        public async Task When_RequestIsSuccessfull_Should_ParseResponse()
         {
             var dispatcher = Dispatcher.Mock("response", 207, "Multi-Status");
             var propfindResponseParser = Substitute.For<IResponseParser<PropfindResponse>>();
@@ -38,7 +39,7 @@ namespace WebDav.Client.Tests.Methods
         }
 
         [Fact]
-        public async void When_RequestIsFailed_Should_ReturnStatusCode500()
+        public async Task When_RequestIsFailed_Should_ReturnStatusCode500()
         {
             var client = new WebDavClient().SetWebDavDispatcher(Dispatcher.MockFaulted());
             var response = await client.Propfind("http://example.com");
@@ -46,7 +47,7 @@ namespace WebDav.Client.Tests.Methods
         }
 
         [Fact]
-        public async void When_IsCalledWithDefaultArguments_Should_SendPropfindRequest()
+        public async Task When_IsCalledWithDefaultArguments_Should_SendPropfindRequest()
         {
             var requestUri = new Uri("http://example.com");
             var dispatcher = Dispatcher.Mock();
@@ -58,7 +59,7 @@ namespace WebDav.Client.Tests.Methods
         }
 
         [Fact]
-        public async void When_IsAppliedToResourceAndAncestors_Should_SendDepthHeaderEqualsInfinity()
+        public async Task When_IsAppliedToResourceAndAncestors_Should_SendDepthHeaderEqualsInfinity()
         {
             var dispatcher = Dispatcher.Mock();
             var client = new WebDavClient().SetWebDavDispatcher(dispatcher);
@@ -69,7 +70,7 @@ namespace WebDav.Client.Tests.Methods
         }
 
         [Fact]
-        public async void When_IsAppliedToResourceAndChildren_Should_SendDepthHeaderEqualsOne()
+        public async Task When_IsAppliedToResourceAndChildren_Should_SendDepthHeaderEqualsOne()
         {
             var dispatcher = Dispatcher.Mock();
             var client = new WebDavClient().SetWebDavDispatcher(dispatcher);
@@ -80,7 +81,7 @@ namespace WebDav.Client.Tests.Methods
         }
 
         [Fact]
-        public async void When_IsAppliedToResourceOnly_Should_SendDepthHeaderEqualsZero()
+        public async Task When_IsAppliedToResourceOnly_Should_SendDepthHeaderEqualsZero()
         {
             var dispatcher = Dispatcher.Mock();
             var client = new WebDavClient().SetWebDavDispatcher(dispatcher);
@@ -91,7 +92,7 @@ namespace WebDav.Client.Tests.Methods
         }
 
         [Fact]
-        public async void When_IsCalledWithCancellationToken_Should_SendRequestWithIt()
+        public async Task When_IsCalledWithCancellationToken_Should_SendRequestWithIt()
         {
             var cts = new CancellationTokenSource();
             var dispatcher = Dispatcher.Mock();
@@ -103,7 +104,7 @@ namespace WebDav.Client.Tests.Methods
         }
 
         [Fact]
-        public async void When_IsCalledWithDefaultArguments_Should_SendAllPropRequest()
+        public async Task When_IsCalledWithDefaultArguments_Should_SendAllPropRequest()
         {
             const string expectedContent =
 @"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -119,7 +120,7 @@ namespace WebDav.Client.Tests.Methods
         }
 
         [Fact]
-        public async void When_IsCalledWithCustomProperties_Should_IncludeThemInRequest()
+        public async Task When_IsCalledWithCustomProperties_Should_IncludeThemInRequest()
         {
             const string expectedContent =
 @"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -134,16 +135,13 @@ namespace WebDav.Client.Tests.Methods
             var client = new WebDavClient().SetWebDavDispatcher(dispatcher);
 
             await client.Propfind("http://example.com",
-                new PropfindParameters
-                {
-                    CustomProperties = new XName[] { "myprop1", "myprop2" }
-                });
+                new PropfindParameters { CustomProperties = ["myprop1", "myprop2"] });
             await dispatcher.Received(1)
                 .Send(Arg.Any<Uri>(), WebDavMethod.Propfind, Arg.Is(Predicates.CompareRequestContent(expectedContent)), CancellationToken.None);
         }
 
         [Fact]
-        public async void When_CustomPropertiesHaveNamespaces_Should_IncludeThemInRequest()
+        public async Task When_CustomPropertiesHaveNamespaces_Should_IncludeThemInRequest()
         {
             const string expectedContent =
 @"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -160,14 +158,14 @@ namespace WebDav.Client.Tests.Methods
             await client.Propfind("http://example.com",
                 new PropfindParameters
                 {
-                    CustomProperties = new XName[] { "{http://ns1.example.com}myprop1", "{http://ns2.example.com}myprop2" }
+                    CustomProperties = ["{http://ns1.example.com}myprop1", "{http://ns2.example.com}myprop2"]
                 });
             await dispatcher.Received(1)
                 .Send(Arg.Any<Uri>(), WebDavMethod.Propfind, Arg.Is(Predicates.CompareRequestContent(expectedContent)), CancellationToken.None);
         }
 
         [Fact]
-        public async void When_IsCalledWithDefaultNamespace_Should_IncludeItInRequest()
+        public async Task When_IsCalledWithDefaultNamespace_Should_IncludeItInRequest()
         {
             const string expectedContent =
 @"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -184,15 +182,15 @@ namespace WebDav.Client.Tests.Methods
             await client.Propfind("http://example.com",
                 new PropfindParameters
                 {
-                    CustomProperties = new XName[] { "{http://ns.example.com}myprop1", "{http://ns.example.com}myprop2" },
-                    Namespaces = new[] { new NamespaceAttr("http://ns.example.com") }
+                    CustomProperties = ["{http://ns.example.com}myprop1", "{http://ns.example.com}myprop2"],
+                    Namespaces = [new NamespaceAttr("http://ns.example.com")]
                 });
             await dispatcher.Received(1)
                 .Send(Arg.Any<Uri>(), WebDavMethod.Propfind, Arg.Is(Predicates.CompareRequestContent(expectedContent)), CancellationToken.None);
         }
 
         [Fact]
-        public async void When_IsCalledWithMoreThanOneDefaultNamespace_Should_UseTheLastOne()
+        public async Task When_IsCalledWithMoreThanOneDefaultNamespace_Should_UseTheLastOne()
         {
             const string expectedContent =
 @"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -208,15 +206,15 @@ namespace WebDav.Client.Tests.Methods
             await client.Propfind("http://example.com",
                 new PropfindParameters
                 {
-                    CustomProperties = new XName[] { "{http://ns2.example.com}myprop" },
-                    Namespaces = new[] { new NamespaceAttr("http://ns1.example.com"), new NamespaceAttr("http://ns2.example.com") }
+                    CustomProperties = ["{http://ns2.example.com}myprop"],
+                    Namespaces = [new NamespaceAttr("http://ns1.example.com"), new NamespaceAttr("http://ns2.example.com")]
                 });
             await dispatcher.Received(1)
                 .Send(Arg.Any<Uri>(), WebDavMethod.Propfind, Arg.Is(Predicates.CompareRequestContent(expectedContent)), CancellationToken.None);
         }
 
         [Fact]
-        public async void When_IsCalledWithPrefixedNamespaces_Should_IncludeThemInRequest()
+        public async Task When_IsCalledWithPrefixedNamespaces_Should_IncludeThemInRequest()
         {
             const string expectedContent =
 @"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -233,15 +231,15 @@ namespace WebDav.Client.Tests.Methods
             await client.Propfind("http://example.com",
                 new PropfindParameters
                 {
-                    CustomProperties = new XName[] { "{http://p1.example.com}myprop1", "{http://p2.example.com}myprop2" },
-                    Namespaces = new[] { new NamespaceAttr("P1", "http://p1.example.com"), new NamespaceAttr("P2", "http://p2.example.com") }
+                    CustomProperties = ["{http://p1.example.com}myprop1", "{http://p2.example.com}myprop2"],
+                    Namespaces = [new NamespaceAttr("P1", "http://p1.example.com"), new NamespaceAttr("P2", "http://p2.example.com")]
                 });
             await dispatcher.Received(1)
                 .Send(Arg.Any<Uri>(), WebDavMethod.Propfind, Arg.Is(Predicates.CompareRequestContent(expectedContent)), CancellationToken.None);
         }
 
         [Fact]
-        public async void When_NamedRequestIsCalled_Should_SendPropRequest()
+        public async Task When_NamedRequestIsCalled_Should_SendPropRequest()
         {
             const string expectedContent =
                 @"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -257,8 +255,8 @@ namespace WebDav.Client.Tests.Methods
             await client.Propfind("http://example.com", new PropfindParameters
             {
                 RequestType = PropfindRequestType.NamedProperties,
-                CustomProperties = new XName[] { "{DAV:}displayname", "{http://p1.example.com}myprop1" },
-                Namespaces = new[] { new NamespaceAttr("P1", "http://p1.example.com") }
+                CustomProperties = ["{DAV:}displayname", "{http://p1.example.com}myprop1"],
+                Namespaces = [new NamespaceAttr("P1", "http://p1.example.com")]
             });
             await dispatcher.Received(1)
                 .Send(Arg.Any<Uri>(), WebDavMethod.Propfind, Arg.Is(Predicates.CompareRequestContent(expectedContent)), CancellationToken.None);
@@ -266,7 +264,7 @@ namespace WebDav.Client.Tests.Methods
 
         // https://github.com/skazantsev/WebDavClient/issues/30
         [Fact]
-        public async void Issue30()
+        public async Task Issue30()
         {
             const string expectedContent =
                 @"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -286,18 +284,18 @@ namespace WebDav.Client.Tests.Methods
             await client.Propfind("http://example.com", new PropfindParameters
             {
                 RequestType = PropfindRequestType.NamedProperties,
-                CustomProperties = new XName[] {
+                CustomProperties = [
                     "{DAV:}getlastmodified",
                     "{http://owncloud.org/ns}fileid",
                     "{http://owncloud.org/ns}permissions",
                     "{http://owncloud.org/ns}size",
                     "{http://owncloud.org/ns}owner-display-name",
                     "{http://nextcloud.org/ns}mount-type"
-                },
-                Namespaces = new[] {
+                ],
+                Namespaces = [
                     new NamespaceAttr("oc", "http://owncloud.org/ns"),
                     new NamespaceAttr("nc", "http://nextcloud.org/ns")
-                }
+                ]
             });
             await dispatcher.Received(1)
                 .Send(Arg.Any<Uri>(), WebDavMethod.Propfind, Arg.Is(Predicates.CompareRequestContent(expectedContent)), CancellationToken.None);
